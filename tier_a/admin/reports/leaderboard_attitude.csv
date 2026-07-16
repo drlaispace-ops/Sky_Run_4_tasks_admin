@@ -1,0 +1,4 @@
+agent,success,collision,departed,tracking_rmse,ep_to_goal,seeds
+ablation (no shaping),0.00,0.00,0.88,0.306,1200,8
+baseline (untrained net),0.00,0.00,1.00,0.203,1200,8
+reference (DQN + shaping),0.00,0.00,1.00,0.398,1200,8

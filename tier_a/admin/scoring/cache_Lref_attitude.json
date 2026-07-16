@@ -1,0 +1,164 @@
+{
+  "8:0": {
+    "Lref": 11.537764081484767,
+    "Tref": 11.297907207301368,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 8,
+    "seed": 0,
+    "trees_placed": 8
+  },
+  "8:1": {
+    "Lref": 11.328780730275513,
+    "Tref": 11.123736745960713,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 8,
+    "seed": 1,
+    "trees_placed": 8
+  },
+  "8:101": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 101,
+    "trees_placed": 8
+  },
+  "8:102": {
+    "Lref": 11.422130045033668,
+    "Tref": 11.201512769313773,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 102,
+    "trees_placed": 8
+  },
+  "8:103": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 103,
+    "trees_placed": 8
+  },
+  "8:104": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 104,
+    "trees_placed": 8
+  },
+  "8:105": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 105,
+    "trees_placed": 8
+  },
+  "8:106": {
+    "Lref": 11.422130045033668,
+    "Tref": 11.201512769313773,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 106,
+    "trees_placed": 8
+  },
+  "8:107": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 107,
+    "trees_placed": 8
+  },
+  "8:108": {
+    "Lref": 11.720067043604848,
+    "Tref": 11.449787848686125,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 108,
+    "trees_placed": 8
+  },
+  "8:109": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 109,
+    "trees_placed": 8
+  },
+  "8:110": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 8,
+    "seed": 110,
+    "trees_placed": 8
+  },
+  "8:2": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 8,
+    "seed": 2,
+    "trees_placed": 8
+  },
+  "8:3": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 8,
+    "seed": 3,
+    "trees_placed": 8
+  },
+  "8:4": {
+    "Lref": 11.329807052734274,
+    "Tref": 11.124594232005055,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 8,
+    "seed": 4,
+    "trees_placed": 8
+  },
+  "8:5": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 8,
+    "seed": 5,
+    "trees_placed": 8
+  },
+  "8:6": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 8,
+    "seed": 6,
+    "trees_placed": 8
+  },
+  "8:7": {
+    "Lref": 11.313708498984761,
+    "Tref": 11.111142709192583,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 8,
+    "seed": 7,
+    "trees_placed": 8
+  }
+}

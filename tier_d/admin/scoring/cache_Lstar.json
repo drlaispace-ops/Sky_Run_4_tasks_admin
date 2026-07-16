@@ -1,0 +1,146 @@
+{
+  "16:0": {
+    "Lstar": 12.719595949289335,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 16,
+    "seed": 0,
+    "trees_placed": 16
+  },
+  "16:1": {
+    "Lstar": 12.250966799187813,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 16,
+    "seed": 1,
+    "trees_placed": 16
+  },
+  "16:101": {
+    "Lstar": 11.548023074035527,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 101,
+    "trees_placed": 16
+  },
+  "16:102": {
+    "Lstar": 12.485281374238575,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 102,
+    "trees_placed": 16
+  },
+  "16:103": {
+    "Lstar": 12.250966799187813,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 103,
+    "trees_placed": 16
+  },
+  "16:104": {
+    "Lstar": 11.548023074035527,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 104,
+    "trees_placed": 16
+  },
+  "16:105": {
+    "Lstar": 12.250966799187813,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 105,
+    "trees_placed": 16
+  },
+  "16:106": {
+    "Lstar": 12.250966799187813,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 106,
+    "trees_placed": 16
+  },
+  "16:107": {
+    "Lstar": 12.01665222413705,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 107,
+    "trees_placed": 16
+  },
+  "16:108": {
+    "Lstar": 12.485281374238575,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 108,
+    "trees_placed": 16
+  },
+  "16:109": {
+    "Lstar": 12.485281374238575,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 109,
+    "trees_placed": 16
+  },
+  "16:110": {
+    "Lstar": 12.485281374238575,
+    "feasible": true,
+    "group": "hidden",
+    "n_trees": 16,
+    "seed": 110,
+    "trees_placed": 16
+  },
+  "16:2": {
+    "Lstar": 11.782337649086289,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 16,
+    "seed": 2,
+    "trees_placed": 16
+  },
+  "16:3": {
+    "Lstar": 12.250966799187813,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 16,
+    "seed": 3,
+    "trees_placed": 16
+  },
+  "16:4": {
+    "Lstar": 11.548023074035527,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 16,
+    "seed": 4,
+    "trees_placed": 16
+  },
+  "16:5": {
+    "Lstar": 11.548023074035527,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 16,
+    "seed": 5,
+    "trees_placed": 16
+  },
+  "16:6": {
+    "Lstar": 11.548023074035527,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 16,
+    "seed": 6,
+    "trees_placed": 16
+  },
+  "16:7": {
+    "Lstar": 11.548023074035527,
+    "feasible": true,
+    "group": "public",
+    "n_trees": 16,
+    "seed": 7,
+    "trees_placed": 16
+  }
+}

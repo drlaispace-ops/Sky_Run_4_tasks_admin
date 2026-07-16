@@ -1,0 +1,28 @@
+{
+  "L_learned": 14.8451,
+  "Lstar": 12.7196,
+  "apf_collided": false,
+  "apf_stall_xy": [
+    5.158,
+    6.202
+  ],
+  "apf_trapped": true,
+  "bridge_ticks": 118,
+  "collision": false,
+  "efficiency": 0.8568,
+  "episodes": 3000,
+  "k_plain": null,
+  "k_plain_125": 2400,
+  "k_shaped": null,
+  "k_shaped_125": 2225,
+  "n_trees": 16,
+  "navigation_function_single_minimum": true,
+  "residual_efficiency": 0.8625,
+  "residual_success": true,
+  "rl_efficiency_on_trap": 0.8568,
+  "rl_success_on_trap": true,
+  "seed": 0,
+  "success": true,
+  "trap_Lstar": 12.7196,
+  "trap_seed": 0
+}

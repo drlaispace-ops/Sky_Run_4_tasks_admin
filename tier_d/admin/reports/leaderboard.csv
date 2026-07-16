@@ -1,0 +1,4 @@
+agent,success,collision,optimality,episodes_to_1.15L*,seeds
+reference (Q-learning + shaping),1.00,0.00,0.945,1781 (88%),8
+ablation (no shaping),1.00,0.00,0.935,2362 (88%),8
+baseline (random / untrained),0.00,0.00,0.000,3000 (0%),8

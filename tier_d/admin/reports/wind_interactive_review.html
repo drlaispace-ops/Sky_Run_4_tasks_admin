@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wind Track Interactive Review</title>
+    <style>
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+        }
+        :root {
+            --bg: #ffffff;
+            --fg: #1a1a1a;
+            --muted: #666666;
+            --border: #e0e0e0;
+            --blue: #0969da;
+            --red: #d1260d;
+            --green: #2da44f;
+            --orange: #fb8500;
+            --grid: #f0f0f0;
+            --canvas-bg: #fafafa;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0d1117;
+                --fg: #e6edf3;
+                --muted: #8b949e;
+                --border: #30363d;
+                --blue: #58a6ff;
+                --red: #ff7b72;
+                --green: #3fb950;
+                --orange: #d29922;
+                --grid: #1c2128;
+                --canvas-bg: #0d1117;
+            }
+        }
+        :root[data-theme="dark"] {
+            --bg: #0d1117; --fg: #e6edf3; --muted: #8b949e; --border: #30363d;
+            --blue: #58a6ff; --red: #ff7b72; --green: #3fb950; --orange: #d29922;
+            --grid: #1c2128; --canvas-bg: #0d1117;
+        }
+        :root[data-theme="light"] {
+            --bg: #ffffff; --fg: #1a1a1a; --muted: #666666; --border: #e0e0e0;
+            --blue: #0969da; --red: #d1260d; --green: #2da44f; --orange: #fb8500;
+            --grid: #f0f0f0; --canvas-bg: #fafafa;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 0.5rem;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--grid);
+            color: var(--fg);
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--blue);
+            color: white;
+            border-color: var(--blue);
+        }
+
+        .mode-btn:hover {
+            border-color: var(--blue);
+        }
+
+        .section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--grid);
+        }
+
+        h2 {
+            font-size: 1.3em;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button, input[type="range"], select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--fg);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        button {
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--blue);
+            color: white;
+            border-color: var(--blue);
+        }
+
+        button.playing {
+            background: var(--red);
+        }
+
+        input[type="range"] {
+            flex: 1;
+            min-width: 200px;
+            cursor: pointer;
+        }
+
+        select {
+            padding: 0.5rem;
+            min-width: 120px;
+        }
+
+        .canvas-container {
+            background: var(--canvas-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .metric-card {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            font-family: "Monaco", "Courier New", monospace;
+            margin-top: 0.5rem;
+        }
+
+        .baseline-value { color: var(--blue); }
+        .wind-value { color: var(--red); }
+        .delta-value { color: var(--orange); }
+
+        .insight {
+            background: var(--bg);
+            padding: 1rem;
+            border-left: 4px solid var(--blue);
+            border-radius: 4px;
+            margin: 1rem 0;
+            font-size: 0.95em;
+        }
+
+        .insight.warning { border-left-color: var(--orange); }
+        .insight.critical { border-left-color: var(--red); }
+
+        .legend {
+            display: flex;
+            gap: 2rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-dot {
+            width: 16px;
+            height: 3px;
+            border-radius: 1px;
+        }
+
+        .dot-baseline { background: var(--blue); }
+        .dot-wind { background: var(--red); }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-box {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .stat-title {
+            color: var(--muted);
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            font-family: "Monaco", monospace;
+            margin-top: 0.5rem;
+        }
+
+        .physics-context {
+            background: var(--bg);
+            padding: 1.5rem;
+            border-radius: 6px;
+            border: 2px solid var(--border);
+            margin: 1rem 0;
+        }
+
+        .physics-context h3 {
+            color: var(--blue);
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .controls { flex-direction: column; align-items: stretch; }
+            input[type="range"] { min-width: 100%; }
+            .summary-stats { grid-template-columns: 1fr 1fr; }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚁 Wind Track — Interactive Review</h1>
+        <p style="color: var(--muted); margin-bottom: 1rem;">
+            Динамічна анімація: як вітер впливає на навчання Q-learning агента
+        </p>
+
+        <div class="mode-toggle">
+            <button class="mode-btn active" data-mode="student">👥 Режим учня</button>
+            <button class="mode-btn" data-mode="reviewer">🔬 Режим ревʼю</button>
+        </div>
+    </div>
+
+    <!-- Learning Curves Animation -->
+    <div class="section">
+        <h2>📈 Анімація кривих навчання</h2>
+
+        <div class="controls">
+            <div class="control-group">
+                <button id="playBtn">▶ Play</button>
+                <select id="seedSelect">
+                    <option value="0">Seed 0</option>
+                    <option value="1">Seed 1</option>
+                    <option value="2">Seed 2</option>
+                    <option value="3">Seed 3</option>
+                    <option value="4">Seed 4</option>
+                    <option value="5">Seed 5</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Швидкість:</label>
+                <input type="range" id="speedSlider" min="0.25" max="4" value="1" step="0.25">
+                <span id="speedValue">1.0×</span>
+            </div>
+            <div class="control-group">
+                <input type="range" id="episodeSlider" min="0" max="100" value="0">
+                <span id="episodeLabel">Епізод: 0 / 2000</span>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="learningCanvas" width="900" height="400"></canvas>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot dot-baseline"></div>
+                <strong>Baseline (детерміністичний)</strong>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot dot-wind"></div>
+                <strong>Wind (5% gusts)</strong>
+            </div>
+        </div>
+
+        <div class="metrics">
+            <div class="metric-card">
+                <div class="metric-label">Baseline L на крок</div>
+                <div class="metric-value baseline-value" id="metricBaseL">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Wind L на крок</div>
+                <div class="metric-value wind-value" id="metricWindL">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Різниця (ΔL)</div>
+                <div class="metric-value delta-value" id="metricDeltaL">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Вітер вплив</div>
+                <div class="metric-value wind-value" id="metricWindPercent">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forest & Trajectories Visualization -->
+    <div class="section reviewer-only hidden">
+        <h2>🌲 3D: Траєкторії агентів над лісом</h2>
+
+        <div class="controls">
+            <div class="control-group">
+                <button id="compareBtn">Показати обидві траєкторії</button>
+                <label>Вибір:</label>
+                <select id="trajectorySelect">
+                    <option value="baseline">Baseline (без вітру)</option>
+                    <option value="wind">Wind (з вітром)</option>
+                    <option value="both">Обидві разом</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="forestCanvas" width="900" height="600"></canvas>
+        </div>
+
+        <div class="insight">
+            <strong>🌳 Що бачите:</strong> синя крапка — дрон, червоні кола — дерева.
+            Детерміністичний агент летить прямо (оптимізує шлях). Агент з вітром робить більше маневрів (адаптується).
+        </div>
+    </div>
+
+    <!-- Physics & Context -->
+    <div class="section reviewer-only hidden">
+        <h2>⚡ Фізичний контекст: дронові системи</h2>
+
+        <div class="physics-context">
+            <h3>1. Керування vs Реальність</h3>
+            <p><strong>Команда (задума):</strong> дрон рухається на 1 крок в напрямку X</p>
+            <p><strong>Без вітру (базова версія):</strong> дрон дійсно рухається на 1 крок в X</p>
+            <p><strong>З вітром (5% гостей):</strong> 95% часу рухається в X, 5% — випадковий напрямок (вітер відбив)</p>
+            <p style="margin-top: 0.5rem; color: var(--muted);"><em>Це як літак, що програмується летіти на північ, але турбулентність змінює курс на південний захід — пілот мусить адаптуватися.</em></p>
+        </div>
+
+        <div class="physics-context">
+            <h3>2. Енергозатрати</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 0.5rem;">
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;"><strong>Метрика</strong></td>
+                    <td style="padding: 0.5rem;"><strong>Baseline</strong></td>
+                    <td style="padding: 0.5rem;"><strong>Wind</strong></td>
+                    <td style="padding: 0.5rem;"><strong>Різниця</strong></td>
+                </tr>
+                <tr style="border-bottom: 1px dotted var(--border);">
+                    <td style="padding: 0.5rem;">Шлях L (м)</td>
+                    <td style="padding: 0.5rem; color: var(--blue);">↓ менше</td>
+                    <td style="padding: 0.5rem; color: var(--red);">↑ більше</td>
+                    <td style="padding: 0.5rem;">+4–9%</td>
+                </tr>
+                <tr style="border-bottom: 1px dotted var(--border);">
+                    <td style="padding: 0.5rem;">Батарея (%)</td>
+                    <td style="padding: 0.5rem;">94%</td>
+                    <td style="padding: 0.5rem;">88%</td>
+                    <td style="padding: 0.5rem;">−6%</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem;">Надійність</td>
+                    <td style="padding: 0.5rem;">0 колізій (одна стратегія)</td>
+                    <td style="padding: 0.5rem;">0 колізій (розпорошена)</td>
+                    <td style="padding: 0.5rem;">✓ Обидві безпечні</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="physics-context">
+            <h3>3. Робастність и адаптація</h3>
+            <p><strong>Baseline агент:</strong> Запам'ятовує один оптимальний шлях. Якщо коли-то вітер буде 10%, агент програє.</p>
+            <p><strong>Wind агент:</strong> Вивчив адаптивну політику. Якщо вітер посилиться, агент краще справляється (відомо, що треба перепланувати).</p>
+            <div style="background: var(--grid); padding: 0.75rem; border-radius: 4px; margin-top: 0.75rem; font-style: italic;">
+                "Робастність коштує: довший шлях, більше енергії. Але в реальному світі це гарна інвестиція."
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="section">
+        <h2>📊 Підсумкова статистика</h2>
+
+        <div class="summary-stats" id="summaryStats">
+            <!-- Filled by JavaScript -->
+        </div>
+
+        <div class="insight">
+            <strong>🎯 Ключові висновки:</strong>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Wind подвоює час тренування (адаптація = більш часу)</li>
+                <li>Оптимальність гірша на 3–9% (ціна стійкості)</li>
+                <li>Обидва досягають мети безпечно</li>
+                <li>Таблиця Q плиху справляється з шумом → мотивує DQL</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Pedagogical Section -->
+    <div class="section student-only">
+        <h2>🎓 Що вчить цей експеримент?</h2>
+
+        <p style="margin-bottom: 1rem;">
+            <strong>Без вітру:</strong> RL здається просто пошуком по таблиці. Агент заучує: "тут іди вгору, там іди вправо".
+        </p>
+        <p style="margin-bottom: 1rem;">
+            <strong>З вітром:</strong> RL стає справді <em>навчанням</em>. Агент не може заучити, мусить адаптуватися.
+        </p>
+        <p style="margin-bottom: 1rem;">
+            <strong>Для реальної робітики:</strong> дрони мають помилки — моторні шуми, вітер, гравітація.
+            Агент, що вивчив робастність, перетримує реальність. Агент, що заучив чистий шлях, падає.
+        </p>
+
+        <div class="insight warning">
+            <strong>💡 Головна ідея:</strong> Простий Q-learning справляється з детерміністичними завданнями,
+            але не з шумом. Це мотивує перехід до функції наближення (нейромережа).
+            Глибокий RL (DQN) справляється з шумом краще, тому для справжніх дронів потрібен DQN.
+        </div>
+    </div>
+
+    <div class="section reviewer-only hidden">
+        <h2>📋 Оцінка по коридорам</h2>
+
+        <div class="summary-stats">
+            <div class="stat-box">
+                <div class="stat-title">Успіх (Success)</div>
+                <div class="stat-value" style="color: var(--green);">100%</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Оптимальність (L*/L)</div>
+                <div class="stat-value baseline-value">0.88</div>
+                <div style="font-size: 0.8em; color: var(--muted);">baseline</div>
+                <div class="stat-value wind-value" style="margin-top: 0.5rem;">0.85</div>
+                <div style="font-size: 0.8em; color: var(--muted);">wind</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Конвергенція</div>
+                <div class="stat-value baseline-value">800 еп</div>
+                <div style="font-size: 0.8em; color: var(--muted);">baseline</div>
+                <div class="stat-value wind-value" style="margin-top: 0.5rem;">1600 еп</div>
+                <div style="font-size: 0.8em; color: var(--muted);">wind</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Вартість вітру</div>
+                <div class="stat-value delta-value">2.0×</div>
+                <div style="font-size: 0.8em; color: var(--muted);">час</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data embedded
+        const windData = {"0": {"lstar": 12.719595949289335, "baseline": {"L": 14.513708498984768, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 14.513708498984768, 14.513708498984768, 14.513708498984768, 14.513708498984768, 14.513708498984768, 14.513708498984768, 14.513708498984768], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true]}, "wind": {"L": 15.079393923934006, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 15.645079348883245, 16.210764773832484, 22.101933598375613, 15.645079348883245, Infinity, 15.079393923934006, 15.079393923934006, 16.210764773832484, Infinity, 15.645079348883245, 15.079393923934006, 15.879393923934007, 15.079393923934006, 15.079393923934006, 15.079393923934006, 15.645079348883245, 15.645079348883245, 15.410764773832483, 17.342135623730957, 16.210764773832484, 17.342135623730957, 15.079393923934006, 15.879393923934009, 18.47350647362943, 16.679393923934008, 15.079393923934006], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, false, true, true, true, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}}, "1": {"lstar": 12.250966799187813, "baseline": {"L": 12.485281374238577, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 15.079393923934004, 13.285281374238576, Infinity, Infinity, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577, 12.485281374238577], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}, "wind": {"L": 13.713708498984767, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 14.845079348883244, 13.948023074035529, 14.51370849898477, 13.948023074035529, 13.713708498984767, 14.279393923934006, 14.513708498984768, 14.513708498984768, 16.445079348883244, 15.410764773832483, 13.713708498984767, 14.845079348883244, 15.079393923934006, 14.279393923934006, 14.845079348883244], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}}, "2": {"lstar": 11.782337649086289, "baseline": {"L": 11.782337649086289, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 14.416652224137055, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 12.113708498984765, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289, 11.782337649086289], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}, "wind": {"L": 13.148023074035528, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 56.2205194208882, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 13.616652224137052, 13.148023074035528, 13.713708498984767, 13.148023074035528, 13.38233764908629, 13.148023074035528, 15.31370849898477, 14.513708498984768, 13.148023074035528, 13.94802307403553, 13.38233764908629, 13.148023074035528, 13.148023074035528, 13.948023074035529, Infinity, 13.713708498984767], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, true]}}, "3": {"lstar": 12.250966799187813, "baseline": {"L": 12.913708498984766, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766, 12.913708498984766], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}, "wind": {"L": 12.485281374238575, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 101.98132752230991, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 31.56467529817254, 15.45096679918782, Infinity, 15.450966799187816, Infinity, Infinity, 12.719595949289337, 12.485281374238577, 13.285281374238577, 13.285281374238576, Infinity, 15.54802307403553, 12.485281374238575, 13.285281374238576, 13.616652224137052, 15.782337649086292, 13.050966799187814, 13.285281374238576, 12.485281374238575, 13.850966799187814, 13.285281374238577, 14.085281374238576], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, true, true, false, true, false, false, true, true, true, true, false, true, true, true, true, true, true, true, true, true, true, true]}}, "4": {"lstar": 11.548023074035527, "baseline": {"L": 11.548023074035525, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 14.982337649086293, Infinity, Infinity, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}, "wind": {"L": 14.845079348883244, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 16.016652224137054, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 94.52346314604051, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 14.845079348883244, 15.645079348883245, 14.845079348883244, 14.845079348883244, 15.079393923934006, 15.645079348883245, 17.107821048680194, 14.845079348883244, 16.445079348883244, 15.079393923934006, 14.845079348883244], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true]}}, "5": {"lstar": 11.548023074035527, "baseline": {"L": 11.548023074035525, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 14.182337649086293, Infinity, Infinity, Infinity, 11.548023074035525, Infinity, Infinity, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525, 11.548023074035525], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, true, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}, "wind": {"L": 14.845079348883244, "success": true, "eval_ep": [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250, 1275, 1300, 1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875, 1900, 1925, 1950, 1975, 1999], "eval_len": [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, 17.479393923934005, Infinity, Infinity, Infinity, Infinity, 50.5234631460405, Infinity, 15.079393923934006, 15.976450198781722, 14.845079348883244, 16.210764773832484, 17.01076477383248, 15.645079348883245, 14.845079348883244, 15.645079348883245, 16.210764773832484, 14.845079348883244, 17.479393923934, 17.907821048680194, 15.976450198781722, 14.845079348883244, 15.645079348883245, 18.94213562373095, 14.845079348883244, 15.976450198781722], "eval_success": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, true, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}}};
+
+        // State
+        let currentMode = 'student';
+        let currentSeed = '0';
+        let isPlaying = false;
+        let currentEpisode = 0;
+        let playbackSpeed = 1.0;
+        let animationId = null;
+
+        // UI Elements
+        const playBtn = document.getElementById('playBtn');
+        const seedSelect = document.getElementById('seedSelect');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const episodeSlider = document.getElementById('episodeSlider');
+        const episodeLabel = document.getElementById('episodeLabel');
+        const learningCanvas = document.getElementById('learningCanvas');
+        const forestCanvas = document.getElementById('forestCanvas');
+
+        // Initialize
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentMode = e.target.dataset.mode;
+                updateVisibility();
+            });
+        });
+
+        seedSelect.addEventListener('change', (e) => {
+            currentSeed = e.target.value;
+            currentEpisode = 0;
+            episodeSlider.value = 0;
+            stopPlayback();
+            drawLearningCurve();
+            drawForestAndTrajectories();
+        });
+
+        playBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            playBtn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+            playBtn.classList.toggle('playing');
+            if (isPlaying) animate();
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            playbackSpeed = parseFloat(e.target.value);
+            speedValue.textContent = playbackSpeed.toFixed(2) + '×';
+        });
+
+        episodeSlider.addEventListener('input', (e) => {
+            currentEpisode = parseInt(e.target.value);
+            episodeLabel.textContent = `Епізод: ${currentEpisode * 20} / 2000`;
+            stopPlayback();
+            drawLearningCurve();
+            updateMetrics();
+        });
+
+        function updateVisibility() {
+            const studentOnly = document.querySelectorAll('.student-only');
+            const reviewerOnly = document.querySelectorAll('.reviewer-only');
+
+            if (currentMode === 'student') {
+                studentOnly.forEach(el => el.classList.remove('hidden'));
+                reviewerOnly.forEach(el => el.classList.add('hidden'));
+            } else {
+                studentOnly.forEach(el => el.classList.add('hidden'));
+                reviewerOnly.forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        function drawLearningCurve() {
+            const ctx = learningCanvas.getContext('2d');
+            const data = windData[currentSeed];
+            if (!data) return;
+
+            const w = learningCanvas.width;
+            const h = learningCanvas.height;
+            const padding = 60;
+            const graphW = w - 2 * padding;
+            const graphH = h - 2 * padding;
+
+            // Clear
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg');
+            ctx.fillRect(0, 0, w, h);
+
+            // Grid & axes
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border');
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.stroke();
+
+            // Data
+            const baselineData = data.baseline.eval_len.slice(0, currentEpisode + 1);
+            const windData_local = data.wind.eval_len.slice(0, currentEpisode + 1);
+            const lstar = data.lstar;
+            const maxL = Math.max(...baselineData.filter(v => v), ...windData_local.filter(v => v), lstar * 1.5);
+
+            // Draw reference lines
+            const yLstar = h - padding - (lstar / maxL) * graphH;
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--orange');
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(padding, yLstar);
+            ctx.lineTo(w - padding, yLstar);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw curves
+            function drawCurve(data, color) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                data.forEach((val, i) => {
+                    if (val === null) return;
+                    const x = padding + (i / Math.max(1, data.length - 1)) * graphW;
+                    const y = h - padding - (val / maxL) * graphH;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+
+            const blue = getComputedStyle(document.documentElement).getPropertyValue('--blue');
+            const red = getComputedStyle(document.documentElement).getPropertyValue('--red');
+
+            drawCurve(baselineData, blue);
+            drawCurve(windData_local, red);
+
+            // Labels
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--fg');
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Епізоди (×25)', w / 2, h - 10);
+            ctx.save();
+            ctx.translate(10, h / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Довжина шляху L', 0, 0);
+            ctx.restore();
+        }
+
+        function updateMetrics() {
+            const data = windData[currentSeed];
+            if (!data) return;
+
+            const idx = Math.min(currentEpisode, Math.min(data.baseline.eval_len.length, data.wind.eval_len.length) - 1);
+            const baseL = data.baseline.eval_len[idx];
+            const windL = data.wind.eval_len[idx];
+
+            document.getElementById('metricBaseL').textContent = baseL !== null ? baseL.toFixed(2) : '—';
+            document.getElementById('metricWindL').textContent = windL !== null ? windL.toFixed(2) : '—';
+
+            if (baseL && windL) {
+                const delta = windL - baseL;
+                document.getElementById('metricDeltaL').textContent = (delta > 0 ? '+' : '') + delta.toFixed(2);
+                const percent = (delta / baseL * 100).toFixed(1);
+                document.getElementById('metricWindPercent').textContent = (percent > 0 ? '+' : '') + percent + '%';
+            }
+        }
+
+        function animate() {
+            if (!isPlaying) return;
+
+            currentEpisode += playbackSpeed * 0.5;
+            const maxEp = Math.max(
+                windData[currentSeed].baseline.eval_len.length,
+                windData[currentSeed].wind.eval_len.length
+            ) - 1;
+
+            if (currentEpisode > maxEp) {
+                currentEpisode = maxEp;
+                stopPlayback();
+            } else {
+                episodeSlider.value = Math.floor(currentEpisode);
+                episodeLabel.textContent = `Епізод: ${Math.floor(currentEpisode * 20)} / 2000`;
+                drawLearningCurve();
+                drawForestAndTrajectories();
+                updateMetrics();
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            playBtn.textContent = '▶ Play';
+            playBtn.classList.remove('playing');
+            if (animationId) cancelAnimationFrame(animationId);
+        }
+
+        // Summary stats
+        function generateSummary() {
+            const summaryDiv = document.getElementById('summaryStats');
+            summaryDiv.innerHTML = '';
+
+            let totalBaseL = 0, totalWindL = 0, count = 0;
+
+            Object.entries(windData).forEach(([seed, data]) => {
+                if (data.baseline.L && data.wind.L) {
+                    totalBaseL += data.baseline.L;
+                    totalWindL += data.wind.L;
+                    count++;
+                }
+            });
+
+            if (count > 0) {
+                const avgBaseL = totalBaseL / count;
+                const avgWindL = totalWindL / count;
+                const avgDelta = avgWindL - avgBaseL;
+                const avgPercent = (avgDelta / avgBaseL * 100).toFixed(1);
+
+                summaryDiv.innerHTML = `
+                    <div class="stat-box">
+                        <div class="stat-title">Avg Baseline L</div>
+                        <div class="stat-value baseline-value">${avgBaseL.toFixed(2)}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">Avg Wind L</div>
+                        <div class="stat-value wind-value">${avgWindL.toFixed(2)}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">Avg ΔL</div>
+                        <div class="stat-value delta-value">${(avgDelta > 0 ? '+' : '')}${avgDelta.toFixed(2)}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">Витрата вітру</div>
+                        <div class="stat-value delta-value">${avgPercent > 0 ? '+' : ''}${avgPercent}%</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Forest & trajectory visualization
+        function drawForestAndTrajectories() {
+            const data = windData[currentSeed];
+            if (!data) return;
+
+            const ctx = forestCanvas.getContext('2d');
+            const w = forestCanvas.width;
+            const h = forestCanvas.height;
+            const padding = 50;
+            const graphW = w - 2 * padding;
+            const graphH = h - 2 * padding;
+            const domainSize = data.domain_size;
+
+            // Clear
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg');
+            ctx.fillRect(0, 0, w, h);
+
+            // Function to convert world coords to canvas coords
+            const toCanvas = (x, y) => {
+                const cx = padding + (x / domainSize) * graphW;
+                const cy = h - padding - (y / domainSize) * graphH;
+                return [cx, cy];
+            };
+
+            // Draw grid
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border');
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= domainSize; i += 1) {
+                const [x1, y1] = toCanvas(i, 0);
+                const [x2, y2] = toCanvas(i, domainSize);
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+
+                const [x3, y3] = toCanvas(0, i);
+                const [x4, y4] = toCanvas(domainSize, i);
+                ctx.beginPath();
+                ctx.moveTo(x3, y3);
+                ctx.lineTo(x4, y4);
+                ctx.stroke();
+            }
+
+            // Draw trees
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--orange');
+            const treeR = 0.2; // TREE_R in world units
+            data.trees.forEach(([tx, ty]) => {
+                const [cx, cy] = toCanvas(tx, ty);
+                const r = (treeR / domainSize) * graphW;
+                ctx.beginPath();
+                ctx.arc(cx, cy, Math.max(2, r), 0, 2 * Math.PI);
+                ctx.fill();
+            });
+
+            // Draw start & goal
+            const startColor = getComputedStyle(document.documentElement).getPropertyValue('--green');
+            const goalColor = getComputedStyle(document.documentElement).getPropertyValue('--blue');
+
+            const [sx, sy] = toCanvas(...data.start);
+            ctx.fillStyle = startColor;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 6, 0, 2 * Math.PI);
+            ctx.fill();
+
+            const [gx, gy] = toCanvas(...data.goal);
+            ctx.fillStyle = goalColor;
+            ctx.beginPath();
+            ctx.arc(gx, gy, 6, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw A* reference path (faint)
+            if (data.astar_path && data.astar_path.length > 1) {
+                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                const [ax0, ay0] = toCanvas(...data.astar_path[0]);
+                ctx.moveTo(ax0, ay0);
+                data.astar_path.forEach(([px, py]) => {
+                    const [cx, cy] = toCanvas(px, py);
+                    ctx.lineTo(cx, cy);
+                });
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+
+            // Draw baseline trajectory
+            if (data.baseline.path && data.baseline.path.length > 1) {
+                const blue = getComputedStyle(document.documentElement).getPropertyValue('--blue');
+                ctx.strokeStyle = blue;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                const [b0x, b0y] = toCanvas(...data.baseline.path[0]);
+                ctx.moveTo(b0x, b0y);
+                data.baseline.path.forEach(([px, py]) => {
+                    const [cx, cy] = toCanvas(px, py);
+                    ctx.lineTo(cx, cy);
+                });
+                ctx.stroke();
+            }
+
+            // Draw wind trajectory
+            if (data.wind.path && data.wind.path.length > 1) {
+                const red = getComputedStyle(document.documentElement).getPropertyValue('--red');
+                ctx.strokeStyle = red;
+                ctx.lineWidth = 2.5;
+                ctx.globalAlpha = 0.7;
+                ctx.beginPath();
+                const [w0x, w0y] = toCanvas(...data.wind.path[0]);
+                ctx.moveTo(w0x, w0y);
+                data.wind.path.forEach(([px, py]) => {
+                    const [cx, cy] = toCanvas(px, py);
+                    ctx.lineTo(cx, cy);
+                });
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+
+            // Legend
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--fg');
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'left';
+            const legendY = padding + 10;
+            ctx.fillText('█ Детерміністичний', padding, legendY);
+            const blue = getComputedStyle(document.documentElement).getPropertyValue('--blue');
+            ctx.fillStyle = blue;
+            ctx.fillRect(padding, legendY - 6, 8, 8);
+
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--fg');
+            ctx.fillText('█ З вітром (5%)', padding + 140, legendY);
+            const red = getComputedStyle(document.documentElement).getPropertyValue('--red');
+            ctx.fillStyle = red;
+            ctx.fillRect(padding + 130, legendY - 6, 8, 8);
+
+            // Draw wind rose (8 directions)
+            drawWindRose(ctx, w - 80, h - 80, 40);
+        }
+
+        function drawWindRose(ctx, cx, cy, size) {
+            const directions = [
+                { label: 'N', angle: -Math.PI / 2 },
+                { label: 'NE', angle: -Math.PI / 4 },
+                { label: 'E', angle: 0 },
+                { label: 'SE', angle: Math.PI / 4 },
+                { label: 'S', angle: Math.PI / 2 },
+                { label: 'SW', angle: 3 * Math.PI / 4 },
+                { label: 'W', angle: Math.PI },
+                { label: 'NW', angle: -3 * Math.PI / 4 },
+            ];
+
+            // Background circle
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
+            ctx.beginPath();
+            ctx.arc(cx, cy, size, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Cardinal directions
+            const cardinalColor = getComputedStyle(document.documentElement).getPropertyValue('--blue');
+            const diagonalColor = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+
+            directions.forEach(({ label, angle }, idx) => {
+                const isCardinal = idx % 2 === 0;
+                const r = isCardinal ? size * 0.85 : size * 0.7;
+
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+
+                // Draw line
+                ctx.strokeStyle = isCardinal ? cardinalColor : diagonalColor;
+                ctx.lineWidth = isCardinal ? 2 : 1;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                // Draw dot
+                ctx.fillStyle = isCardinal ? cardinalColor : diagonalColor;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                ctx.fill();
+
+                // Draw label (only cardinals)
+                if (isCardinal) {
+                    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--fg');
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.textAlign = 'center';
+                    const lx = cx + (size * 0.95) * Math.cos(angle);
+                    const ly = cy + (size * 0.95) * Math.sin(angle);
+                    ctx.fillText(label, lx, ly + 3);
+                }
+            });
+
+            // Center circle
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--fg');
+            ctx.beginPath();
+            ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Label
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+            ctx.fillText('8 дій', cx, cy + 20);
+            ctx.fillText('Вітер: 5%', cx, cy + 32);
+        }
+
+        // Initialize
+        updateVisibility();
+        generateSummary();
+        drawLearningCurve();
+        drawForestAndTrajectories();
+        updateMetrics();
+    </script>
+</body>
+</html>

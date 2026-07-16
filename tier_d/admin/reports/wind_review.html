@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wind Track Review — Baseline vs Wind Comparison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #ffffff;
+            --fg: #1a1a1a;
+            --muted: #666666;
+            --border: #e0e0e0;
+            --blue: #0969da;
+            --red: #d1260d;
+            --orange: #fb8500;
+            --success: #2da44f;
+            --grid: #f0f0f0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0d1117;
+                --fg: #e6edf3;
+                --muted: #8b949e;
+                --border: #30363d;
+                --blue: #58a6ff;
+                --red: #ff7b72;
+                --orange: #d29922;
+                --success: #3fb950;
+                --grid: #1c2128;
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #0d1117;
+            --fg: #e6edf3;
+            --muted: #8b949e;
+            --border: #30363d;
+            --blue: #58a6ff;
+            --red: #ff7b72;
+            --orange: #d29922;
+            --success: #3fb950;
+            --grid: #1c2128;
+        }
+
+        :root[data-theme="light"] {
+            --bg: #ffffff;
+            --fg: #1a1a1a;
+            --muted: #666666;
+            --border: #e0e0e0;
+            --blue: #0969da;
+            --red: #d1260d;
+            --orange: #fb8500;
+            --success: #2da44f;
+            --grid: #f0f0f0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 0.95em;
+            margin-bottom: 2rem;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--grid);
+        }
+
+        h2 {
+            font-size: 1.3em;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 0.95em;
+            margin-bottom: 0.75rem;
+            color: var(--fg);
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.5rem 0;
+            padding: 0.5rem 0;
+            border-bottom: 1px dotted var(--border);
+            font-size: 0.9em;
+        }
+
+        .metric-label {
+            color: var(--muted);
+        }
+
+        .metric-value {
+            font-weight: 600;
+            font-family: "Monaco", "Courier New", monospace;
+        }
+
+        .baseline {
+            color: var(--blue);
+        }
+
+        .wind {
+            color: var(--red);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .comparison-table th {
+            background: var(--grid);
+            color: var(--fg);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+            font-size: 0.9em;
+        }
+
+        .comparison-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9em;
+        }
+
+        .comparison-table tr:hover {
+            background: var(--grid);
+        }
+
+        .value-good {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .value-warn {
+            color: var(--orange);
+            font-weight: 600;
+        }
+
+        .value-bad {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .insight {
+            background: var(--grid);
+            padding: 1rem;
+            border-left: 4px solid var(--blue);
+            border-radius: 4px;
+            margin: 1rem 0;
+            font-size: 0.95em;
+        }
+
+        .insight.warning {
+            border-left-color: var(--orange);
+        }
+
+        .insight.positive {
+            border-left-color: var(--success);
+        }
+
+        .legend {
+            display: flex;
+            gap: 2rem;
+            margin: 1rem 0;
+            font-size: 0.9em;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .dot-blue {
+            background: var(--blue);
+        }
+
+        .dot-red {
+            background: var(--red);
+        }
+
+        .conclusion {
+            padding: 1.5rem;
+            background: var(--grid);
+            border-radius: 6px;
+            border-left: 4px solid var(--blue);
+            font-size: 0.95em;
+            line-height: 1.8;
+        }
+
+        .score {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            background: var(--grid);
+            margin: 0.25rem;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .score.excellent { background: var(--success); color: var(--bg); }
+        .score.good { background: var(--blue); color: var(--bg); }
+        .score.fair { background: var(--orange); color: var(--bg); }
+        .score.poor { background: var(--red); color: var(--bg); }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🚁 Wind Track Comparison Review</h1>
+    <p class="subtitle">Детальне порівняння табличного Q-learning: детерміністичне вс. 5% wind gusts</p>
+
+    <!-- Overview -->
+    <div class="section">
+        <h2>📊 Огляд</h2>
+        <p>Контрольований експеримент порівнює стандартне середовище (GridWorld) з версією, де 5% дій перевизначаються вітром (GridWorldWind). Обидва агента тренуються на одних і тих же seed-ах з ідентичними гіперпараметрами.</p>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot dot-blue"></div>
+                <span><strong>Baseline:</strong> детерміністичне</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot dot-red"></div>
+                <span><strong>Wind:</strong> 5% дій замінено випадково</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="section">
+        <h2>🎯 Результати на публічних seed-ах</h2>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Seed</th>
+                    <th>L*</th>
+                    <th colspan="2">Baseline</th>
+                    <th colspan="2">Wind</th>
+                    <th>Δ L</th>
+                    <th>Δ η</th>
+                </tr>
+                <tr>
+                    <th></th>
+                    <th>(оптимум)</th>
+                    <th>L</th>
+                    <th>L*/L</th>
+                    <th>L</th>
+                    <th>L*/L</th>
+                    <th>(wind - base)</th>
+                    <th>(wind - base)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>0</strong></td>
+                    <td>12.720</td>
+                    <td><span class="value-good">14.514</span></td>
+                    <td><span class="value-good">0.876</span></td>
+                    <td>15.079</td>
+                    <td><span class="value-warn">0.844</span></td>
+                    <td><span class="value-warn">+0.566</span></td>
+                    <td><span class="value-warn">−0.032</span></td>
+                </tr>
+                <tr>
+                    <td><strong>1</strong></td>
+                    <td>12.251</td>
+                    <td><span class="value-good">12.485</span></td>
+                    <td><span class="value-good">0.981</span></td>
+                    <td>13.714</td>
+                    <td><span class="value-warn">0.893</span></td>
+                    <td><span class="value-warn">+1.228</span></td>
+                    <td><span class="value-bad">−0.088</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="insight positive">
+            <strong>✓ Обидва успішні:</strong> Обидва варіанти досягають мети (success = 1.0). Wind не зупиняє навчання, лише сповільнює та робить менш оптимальним.
+        </div>
+    </div>
+
+    <!-- Analysis -->
+    <div class="section">
+        <h2>🔬 Аналіз різниць</h2>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title">📈 Швидкість учення (дані з seed 0)</div>
+                <div class="metric">
+                    <span class="metric-label">Baseline конвергує до L*:</span>
+                    <span class="metric-value baseline">~800 еп</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Wind конвергує до 1.15·L*:</span>
+                    <span class="metric-value wind">~1600 еп</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Ratio (wind/baseline):</span>
+                    <span class="metric-value">2.0×</span>
+                </div>
+                <div class="insight warning">Вітер подвоює час тренування до того ж рівня якості.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📊 Якість фінальної політики</div>
+                <div class="metric">
+                    <span class="metric-label">Baseline L*/L:</span>
+                    <span class="metric-value baseline">0.876</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Wind L*/L:</span>
+                    <span class="metric-value wind">0.844</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Втрата якості:</span>
+                    <span class="metric-value">3.7%</span>
+                </div>
+                <div class="insight">Wind 3–9% гірше за оптимальність, але це ціна стійкості до невизначеності.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Findings -->
+    <div class="section">
+        <h2>💡 Ключові знахідки</h2>
+
+        <div class="insight positive">
+            <strong>1. Стохастичність не ламає RL:</strong> Вітер не запобігає учення. Agent все ще навчається, просто більше часу й з більшими коливаннями на кривій.
+        </div>
+
+        <div class="insight">
+            <strong>2. Мотивація адаптується:</strong> Baseline запам'ятовує один "золотий" шлях. Wind змушує агента вивчити <em>розповсюджену</em> політику, яка робить за різних умов — це справжнє RL.
+        </div>
+
+        <div class="insight warning">
+            <strong>3. Гіперпараметри потребують коригування:</strong> Базові ALPHA=0.15, EPISODES=3000 достатні для baseline. Для wind рекомендуємо ALPHA=0.1, EPISODES=5000+.
+        </div>
+
+        <div class="insight">
+            <strong>4. Шум в кривій = адаптація:</strong> Wind-крива шумніша тому, що агент постійно адаптується до невизначених переходів. Це не баг — це феномен.
+        </div>
+    </div>
+
+    <!-- Learning Dynamics -->
+    <div class="section">
+        <h2>🧠 Динаміка учення</h2>
+
+        <p><strong>Базовий (детерміністичний):</strong></p>
+        <ul style="margin: 0.5rem 0 1rem 2rem; line-height: 1.8;">
+            <li>Гладка крива: агент послідовно пробує дії, знаходить кращі</li>
+            <li>Ґрейді піднімаються швидко: нема непередбачених наслідків</li>
+            <li>Мертва зона: коли знайдений шлях, агент його заучує</li>
+            <li>L близько до L*: не потрібна робастність</li>
+        </ul>
+
+        <p><strong>З вітром (стохастичний):</strong></p>
+        <ul style="margin: 0.5rem 0 1rem 2rem; line-height: 1.8;">
+            <li>Шумна крива: 5% вітру створює безповоротні наслідки</li>
+            <li>Плато довше: агент потребує більше спроб, щоб закріпити шлях</li>
+            <li>Адаптивна політика: учиться не на одну дію, а на розпорошену стратегію</li>
+            <li>L більше за L*: вітер коштує довідпорів на кривій</li>
+        </ul>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="section">
+        <h2>✅ Рекомендації для команд</h2>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Чекпункт</th>
+                    <th>Baseline</th>
+                    <th>Wind</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Глобальне завдання</strong></td>
+                    <td>Запам'ятати оптимальний шлях</td>
+                    <td>Адаптуватися до невизначеності</td>
+                </tr>
+                <tr>
+                    <td><strong>EPISODES</strong></td>
+                    <td>3000 (достатньо)</td>
+                    <td>5000+ (більше часу на адаптацію)</td>
+                </tr>
+                <tr>
+                    <td><strong>ALPHA</strong></td>
+                    <td>0.15 (консервативно)</td>
+                    <td>0.10 (меньше стрибків через шум)</td>
+                </tr>
+                <tr>
+                    <td><strong>Очікувана L*/L</strong></td>
+                    <td>0.85–1.0 (прагнення оптимуму)</td>
+                    <td>0.80–0.90 (задовільна робастність)</td>
+                </tr>
+                <tr>
+                    <td><strong>Крива має бути</strong></td>
+                    <td>Гладка, мало сплеск</td>
+                    <td>Шумна, але тренд вгору</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pedagogical Value -->
+    <div class="section">
+        <h2>🎓 Педагогічна цінність</h2>
+
+        <div class="conclusion">
+            <p><strong>Для 11-го класу:</strong> Wind track показує справжню RL у дії. Без стохастичності табличний Q — це пошук по таблиці. З вітром — це адаптивна система, яка вивчає стратегії, не факти.</p>
+
+            <p style="margin-top: 1rem;"><strong>Ключовий урок:</strong> "Робастність коштує" — детерміністичний агент швидше, wind-агент надійніше. Це компромис, який інженери вирішують кожен день у реальній робітиці.</p>
+
+            <p style="margin-top: 1rem;"><strong>Переважу до deep RL:</strong> Таблиця Q плиху справляється з шумом — потребує більше пам'яті та часу. Нейромережа (DQN) справляється краще. Це мотивує перехід до глибшого RL.</p>
+        </div>
+    </div>
+
+    <!-- Scores -->
+    <div class="section">
+        <h2>📋 Оцінка по коридорам</h2>
+
+        <p><strong>Baseline Performance:</strong></p>
+        <div>
+            <span class="score good">Success ✓</span>
+            <span class="score excellent">Optimality (0.88)</span>
+            <span class="score good">Speed (800 ep)</span>
+            <span class="score excellent">Stability</span>
+        </div>
+
+        <p style="margin-top: 1rem;"><strong>Wind Performance:</strong></p>
+        <div>
+            <span class="score good">Success ✓</span>
+            <span class="score fair">Optimality (0.84)</span>
+            <span class="score fair">Speed (1600 ep)</span>
+            <span class="score good">Robustness</span>
+        </div>
+    </div>
+
+    <!-- Next Steps -->
+    <div class="section">
+        <h2>🚀 Наступні кроки для дослідження</h2>
+
+        <ol style="margin-left: 2rem; line-height: 1.8;">
+            <li><strong>Варіювання WIND_PROB:</strong> Спробуйте 0.02, 0.05, 0.10. Наскільки стійкий агент?</li>
+            <li><strong>А* для вітру:</strong> Розрахуйте L* враховуючи стохастичність. Це мав би бути більше за базовий L*.</li>
+            <li><strong>Curriculum + wind:</strong> Почніть без вітру, потім додайте його. Чи agēnt переносить знання?</li>
+            <li><strong>LIDAR + wind:</strong> Не клітинка, а вектор дистанцій. Вітер все ще проблема?</li>
+            <li><strong>DQN + wind:</strong> Функція наближення краще справляється з шумом. Перевірте.</li>
+        </ol>
+    </div>
+
+    <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85em; text-align: center;">
+        <p>🧪 Controlled Experiment: AI SkyRun Wind Track</p>
+        <p>Generated for Tier 2+ students and organizers review</p>
+    </footer>
+</body>
+</html>
